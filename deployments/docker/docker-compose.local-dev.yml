@@ -1,0 +1,87 @@
+version: '3'
+
+services:
+
+  migration:
+    depends_on:
+      - postgres
+    build:
+      context: ../..
+      dockerfile: ./build/manager/Dockerfile
+    command:
+      - "/app/tooling"
+      - "migrate"
+      - "--user=scheduler"
+      - "--host=postgres:5432"
+      - "--pass=scheduler"
+      - "--name=scheduler"
+
+  manager:
+    build:
+      context: ../..
+      dockerfile: ./build/manager/Dockerfile
+    container_name: manager
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MANAGER_OBSERVABILITY_LOG_LEVEL=info
+      - MANAGER_DB_HOST=postgres:5432
+      - MANAGER_DB_USER=scheduler
+      - MANAGER_DB_NAME=scheduler
+      - MANAGER_DB_PASSWORD=scheduler
+      - MANAGER_DB_DISABLETLS=true
+      - MANAGER_HTTP_ADDRESS=0.0.0.0:8000
+      - MANAGER_STORAGE_ENCRYPTION_KEY=ishouldbechanged
+    volumes:
+      - ../../config/manager.yaml:/app/config.yaml
+    depends_on:
+      - postgres
+      - migration
+
+  runner:
+    build:
+      context: ../..
+      dockerfile: ./build/runner/Dockerfile
+    container_name: runner
+    restart: always
+    volumes:
+      - ../../config/runner.yaml:/app/config.yaml
+    environment:
+      - RUNNER_OBSERVABILITY_LOG_LEVEL=info
+      - RUNNER_DB_HOST=postgres:5432
+      - RUNNER_DB_USER=scheduler
+      - RUNNER_DB_PASSWORD=scheduler
+      - RUNNER_DB_NAME=scheduler
+      - RUNNER_DB_DISABLETLS=true
+      - RUNNER_HTTP_ADDRESS=0.0.0.0:8000
+      - RUNNER_STORAGE_ENCRYPTION_KEY=ishouldbechanged
+    depends_on:
+      - postgres
+      - migration
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: scheduler
+      POSTGRES_DB: scheduler
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: 'rabbitmq_cookie'
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
+
+volumes:
+  pgdata:

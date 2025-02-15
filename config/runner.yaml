@@ -1,0 +1,20 @@
+observability:
+  logging:
+    level: debug
+  metrics:
+    enabled: false
+    address: lgtm-stack:4317
+
+db:
+  host: postgres:5432
+  user: scheduler
+  name: scheduler
+  password: scheduler
+  disableTLS: true
+
+http:
+  address: 0.0.0.0:8000
+
+jobExecutionSettings:
+  maxConcurrentJobs: 1
+  interval: 1m

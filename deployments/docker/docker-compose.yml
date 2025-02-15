@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  migration:
+    image: xblaz3kx/distributed_scheduler:manager-main
+    depends_on:
+      - postgres
+    command:
+      - "/app/tooling"
+      - "migrate"
+      - "--user=scheduler"
+      - "--host=postgres:5432"
+      - "--pass=scheduler"
+      - "--name=scheduler"
+
+  manager:
+    image: xblaz3kx/distributed_scheduler:manager-main
+    container_name: manager
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MANAGER_DB_HOST=postgres:5432
+      - MANAGER_DB_USER=scheduler
+      - MANAGER_DB_PASS=scheduler
+      - MANAGER_DB_DISABLETLS=true
+    depends_on:
+      - postgres
+      - migration
+
+  runner:
+    image: xblaz3kx/distributed_scheduler:runner-main
+    container_name: runner
+    restart: always
+    environment:
+      - RUNNER_DB_HOST=postgres:5432
+      - RUNNER_DB_USER=scheduler
+      - RUNNER_DB_PASS=scheduler
+      - RUNNER_DB_DISABLETLS=true
+    depends_on:
+      - postgres
+      - migration
+
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: scheduler
+      POSTGRES_PASSWORD: scheduler
+      POSTGRES_DB: scheduler
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: 'rabbitmq_cookie'
+      RABBITMQ_DEFAULT_USER: 'guest'
+      RABBITMQ_DEFAULT_PASS: 'guest'
+
+volumes:
+  pgdata:

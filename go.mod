@@ -12,7 +12,6 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	github.com/swaggo/swag v1.16.3
 	github.com/uptrace/opentelemetry-go-extra/otelzap v0.3.2
 	github.com/xBlaz3kx/DevX v0.2.3
 	go.opentelemetry.io/otel v1.32.0
@@ -93,6 +92,7 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/swaggo/swag v1.16.4 // indirect
 	github.com/tavsec/gin-healthcheck v1.6.3 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.3.2 // indirect
 	github.com/vearne/gin-timeout v0.2.0 // indirect

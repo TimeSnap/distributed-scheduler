@@ -1,0 +1,31 @@
+name: Deployments
+on:
+  pull_request:
+    types: [ opened, synchronize ]
+    branches:
+      - main
+    paths:
+      - './deployments/**'
+
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint IaC
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run kics scan
+        uses: Checkmarx/kics-github-action@v1.7.0
+        with:
+          path: './deployments'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output_path: scan_results/
+          ignore_on_exit: results
+          enable_comments: true

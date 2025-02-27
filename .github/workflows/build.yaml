@@ -1,4 +1,4 @@
-name: "Build and Push"
+name: "Build and Push Docker images"
 on:
   push:
     branches:
@@ -16,6 +16,23 @@ on:
       - main
 
 jobs:
+  lint:
+    name: "Lint dockerfiles"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run kics scan
+        uses: Checkmarx/kics-github-action@v1.7.0
+        with:
+          path: ./build
+          token: ${{ secrets.GITHUB_TOKEN }}
+          output_path: build/scan_results/
+          ignore_on_exit: results
+          enable_comments: true
+
   build-and-push-manager:
     name: "Build and Push the Manager"
     runs-on: ubuntu-latest
@@ -78,7 +95,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
 
   build-and-push-runner:
     name: "Build and Push the Runner"

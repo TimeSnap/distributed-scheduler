@@ -8,8 +8,10 @@ import (
 
 	"github.com/TimeSnap/distributed-scheduler/internal/executor"
 	"github.com/TimeSnap/distributed-scheduler/internal/model"
+	"github.com/TimeSnap/distributed-scheduler/internal/pkg/metrics"
 	"github.com/google/uuid"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
+	"github.com/xBlaz3kx/DevX/observability"
 	"go.uber.org/zap"
 )
 
@@ -93,6 +95,7 @@ func createRunnerWithMockExecutor(interval time.Duration, maxConcurrentJobs int,
 			Interval:          interval,
 			MaxConcurrentJobs: maxConcurrentJobs,
 		},
+		Metrics: metrics.NewRunnerMetrics(observability.MetricsConfig{Enabled: false}),
 	})
 }
 

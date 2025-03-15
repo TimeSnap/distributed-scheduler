@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -76,91 +78,97 @@ func TestStop(t *testing.T) {
 }
 
 func TestRunJobs(t *testing.T) {
-	// Test the happy path where GetJobsToRun and FinishJobExecution succeed
-	s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, nil)
-	s.Start()
+	t.Run("Happy path", func(t *testing.T) {
+		// Test the happy path where GetJobsToRun and FinishJobExecution succeed
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, nil)
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that all the jobs have been processed
-	assertJobsProcessed(t, s.jobService.(*mockJobService))
+		// Check that all the jobs have been processed
+		assertJobsProcessed(t, s.jobService.(*mockJobService))
+	})
 
-	// Test the sad path where GetJobsToRun returns an error
-	s = createRunnerWithMockExecutor(time.Millisecond*50, 1, errors.New("get jobs error"), nil, nil, nil)
-	s.Start()
+	t.Run("Get jobs returns an error", func(t *testing.T) {
+		// Test the sad path where GetJobsToRun returns an error
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, errors.New("get jobs error"), nil, nil, nil)
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that no jobs have been processed
-	if len(s.jobService.(*mockJobService).Jobs) != 3 {
-		t.Errorf("Expected no jobs to have been processed, but got %d", len(s.jobService.(*mockJobService).Jobs))
-	}
+		jobs := s.jobService.(*mockJobService).Jobs
+		assert.Len(t, jobs, 3, "Expected no jobs to have been processed, but got %d", len(jobs))
+	})
 
-	// Test the sad path where FinishJobExecution returns an error
-	s = createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, errors.New("finish job error"), nil, nil)
-	s.Start()
+	t.Run("Cant update job after finishing", func(t *testing.T) {
+		// Test the sad path where FinishJobExecution returns an error
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, errors.New("finish job error"), nil, nil)
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that all jobs are still present
-	if len(s.jobService.(*mockJobService).Jobs) != 3 {
-		t.Errorf("Expected all jobs to be still present, but got %d", len(s.jobService.(*mockJobService).Jobs))
-	}
+		jobs := s.jobService.(*mockJobService).Jobs
+		assert.Len(t, jobs, 3, "Expected no jobs to have been processed, but got %d", len(jobs))
+	})
+
 }
 
 func TestExecuteJob(t *testing.T) {
-	// Test the happy path where NewExecutor and Execute succeed
-	s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, nil)
-	s.Start()
+	t.Run("Happy path", func(t *testing.T) {
+		// Test the happy path where NewExecutor and Execute succeed
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, nil)
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that all the jobs have been processed
-	assertJobsProcessed(t, s.jobService.(*mockJobService))
+		// Check that all the jobs have been processed
+		assertJobsProcessed(t, s.jobService.(*mockJobService))
+	})
 
-	// Test the sad path where NewExecutor returns an error
-	s = createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, errors.New("new executor error"), nil)
-	s.Start()
+	t.Run("NewExecutor returns an error", func(t *testing.T) {
+		// Test the sad path where NewExecutor returns an error
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, errors.New("new executor error"), nil)
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that no jobs have been processed
-	if len(s.jobService.(*mockJobService).Jobs) != 3 {
-		t.Errorf("Expected no jobs to have been processed, but got %d", len(s.jobService.(*mockJobService).Jobs))
-	}
+		// Check that no jobs have been processed
+		jobs := s.jobService.(*mockJobService).Jobs
+		assert.Len(t, jobs, 3, "Expected no jobs to have been processed, but got %d", len(jobs))
+	})
 
-	// Test the sad path where Execute returns an error
-	s = createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, errors.New("execute error"))
-	s.Start()
+	t.Run("Execution fails", func(t *testing.T) {
+		// Test the sad path where Execute returns an error
+		s := createRunnerWithMockExecutor(time.Millisecond*50, 1, nil, nil, nil, errors.New("execute error"))
+		s.Start()
 
-	// Sleep for a moment to allow the scheduler to run jobs
-	time.Sleep(time.Millisecond * 200)
+		// Sleep for a moment to allow the scheduler to run jobs
+		time.Sleep(time.Millisecond * 200)
 
-	// Stop the scheduler
-	s.Stop(context.Background())
+		// Stop the scheduler
+		s.Stop(context.Background())
 
-	// Check that no jobs have been processed
-	if len(s.jobService.(*mockJobService).Jobs) != 0 {
-		t.Errorf("Expected all jobs to have been processed, but got %d", len(s.jobService.(*mockJobService).Jobs))
-	}
+		// Check that all jobs have been processed
+		assertJobsProcessed(t, s.jobService.(*mockJobService))
+	})
 }

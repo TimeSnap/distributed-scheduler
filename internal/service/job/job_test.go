@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func Test_Job(t *testing.T) {
+func TestIntegration_Job(t *testing.T) {
 	t.Run("crud", crud)
 	t.Run("job_execution", jobExecution)
 }

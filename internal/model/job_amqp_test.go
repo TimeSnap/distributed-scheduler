@@ -49,3 +49,39 @@ func TestAMQPJobValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestAMQPJobRemoveCredentials(t *testing.T) {
+	tests := []struct {
+		name string
+		job  AMQPJob
+		want AMQPJob
+	}{
+		{
+			name: "AMQP job without credentials",
+			job: AMQPJob{
+				Connection: "amqp://localhost:5672/",
+			},
+			want: AMQPJob{
+				Connection: "amqp://localhost:5672/",
+			},
+		},
+		{
+			name: "AMQP job with credentials",
+			job: AMQPJob{
+				Connection: "amqp://guest:guest@localhost:5672/",
+			},
+			want: AMQPJob{
+				Connection: "amqp://guest:xxxxx@localhost:5672/",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			job := tc.job
+			job.RemoveCredentials()
+
+			assert.Equal(t, tc.want, job)
+		})
+	}
+}

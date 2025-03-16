@@ -140,3 +140,66 @@ func TestAuthValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestHTTPJobRemoveCredentials(t *testing.T) {
+	tests := []struct {
+		name string
+		job  HTTPJob
+		want HTTPJob
+	}{
+		{
+			name: "HTTP job without any credentials",
+			job: HTTPJob{
+				URL:  "https://example.com",
+				Auth: Auth{Type: AuthTypeNone},
+			},
+			want: HTTPJob{
+				URL:  "https://example.com",
+				Auth: Auth{Type: AuthTypeNone},
+			},
+		},
+		{
+			name: "HTTP job with Bearer token",
+			job: HTTPJob{
+				URL: "https://example.com",
+				Auth: Auth{
+					Type:        AuthTypeBearer,
+					BearerToken: null.NewString("imabearertoken123", true),
+				},
+			},
+			want: HTTPJob{
+				URL: "https://example.com",
+				Auth: Auth{
+					Type:        AuthTypeBearer,
+					BearerToken: null.NewString("", false),
+				},
+			},
+		},
+		{
+			name: "HTTP job with HTTP Basic Auth",
+			job: HTTPJob{
+				URL: "https://example.com",
+				Auth: Auth{
+					Type:     AuthTypeBasic,
+					Username: null.NewString("username123", true),
+					Password: null.NewString("password123", true),
+				},
+			},
+			want: HTTPJob{
+				URL: "https://example.com",
+				Auth: Auth{
+					Type:     AuthTypeBasic,
+					Username: null.NewString("", false),
+					Password: null.NewString("", false)},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			job := tc.job
+			job.RemoveCredentials()
+			assert.Equal(t, tc.want, job)
+		})
+	}
+}

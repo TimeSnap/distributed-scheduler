@@ -154,3 +154,115 @@ func TestJobValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveCredentials(t *testing.T) {
+	tests := []struct {
+		name string
+		job  Job
+		want Job
+	}{
+		{
+			name: "AMQP job without credentials",
+			job: Job{
+				Type: JobTypeAMQP,
+				AMQPJob: &AMQPJob{
+					Connection: "amqp://localhost:5672/",
+				},
+			},
+			want: Job{
+				Type: JobTypeAMQP,
+				AMQPJob: &AMQPJob{
+					Connection: "amqp://localhost:5672/",
+				},
+			},
+		},
+		{
+			name: "AMQP job with credentials",
+			job: Job{
+				Type: JobTypeAMQP,
+				AMQPJob: &AMQPJob{
+					Connection: "amqp://guest:guest@localhost:5672/",
+				},
+			},
+			want: Job{
+				Type: JobTypeAMQP,
+				AMQPJob: &AMQPJob{
+					Connection: "amqp://guest:xxxxx@localhost:5672/",
+				},
+			},
+		},
+		{
+			name: "HTTP job without any credentials",
+			job: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL:  "https://example.com",
+					Auth: Auth{Type: AuthTypeNone},
+				},
+			},
+			want: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL:  "https://example.com",
+					Auth: Auth{Type: AuthTypeNone},
+				},
+			},
+		},
+		{
+			name: "HTTP job with Bearer token",
+			job: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL: "https://example.com",
+					Auth: Auth{
+						Type:        AuthTypeBearer,
+						BearerToken: null.NewString("imabearertoken123", true),
+					},
+				},
+			},
+			want: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL: "https://example.com",
+					Auth: Auth{
+						Type:        AuthTypeBearer,
+						BearerToken: null.NewString("", false),
+					},
+				},
+			},
+		},
+		{
+			name: "HTTP job with HTTP Basic Auth",
+			job: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL: "https://example.com",
+					Auth: Auth{
+						Type:     AuthTypeBasic,
+						Username: null.NewString("username123", true),
+						Password: null.NewString("password123", true),
+					},
+				},
+			},
+			want: Job{
+				Type: JobTypeHTTP,
+				HTTPJob: &HTTPJob{
+					URL: "https://example.com",
+					Auth: Auth{
+						Type:     AuthTypeBasic,
+						Username: null.NewString("", false),
+						Password: null.NewString("", false)},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			job := tc.job
+			job.RemoveCredentials()
+
+			assert.Equal(t, tc.want, job)
+		})
+	}
+}

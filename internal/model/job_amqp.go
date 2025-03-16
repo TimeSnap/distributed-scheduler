@@ -68,6 +68,5 @@ func (amqpJob *AMQPJob) RemoveCredentials() {
 	}
 
 	// Only redact the credentials from the connection URL
-	connectionUrl.User = nil
-	amqpJob.Connection = connectionUrl.String()
+	amqpJob.Connection = connectionUrl.Redacted()
 }
